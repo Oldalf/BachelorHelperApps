@@ -1,10 +1,9 @@
 <?php
 
-set_time_limit(500);
-error_reporting(0);
+error_reporting(1);
 
 function Quartile($Array, $Quartile) {
-  sort($Array);
+  $array = sort($Array);
   $pos = (count($Array) - 1) * $Quartile;
 
   $base = floor($pos);
@@ -17,9 +16,15 @@ function Quartile($Array, $Quartile) {
   }
 }
 
-$pdo = new PDO('mysql:host=localhost;dbname=logdb', "root", "");
+function Average($array){
+  return (floor(array_sum($array)/count($array)*100))/100;
+}
+
+$pdo = new PDO('mysql:host=localhost;dbname=logdb', "root", "1234");
 // should be 18
-for ($testcaseNo=1; $testcaseNo <= 18 ; $testcaseNo++) {
+for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
+
+  set_time_limit(500);
 
   $testCase = "TestCase".$testcaseNo;
 
@@ -57,6 +62,23 @@ for ($testcaseNo=1; $testcaseNo <= 18 ; $testcaseNo++) {
       $dbName = "Mongo";
       break;
     }
+
+    $timeOpenSum = [];
+    $timeCloseSum = [];
+    $timeAvgSum = [];
+
+    $requestSizeOpenSum = [];
+    $requestSizeCloseSum = [];
+    $requestSizeAvgSum = [];
+
+    $responseSizeOpenSum = [];
+    $responseSizeCloseSum = [];
+    $responseSizeAvgSum = [];
+
+    $totalSizeOpenSum = [];
+    $totalSizeCloseSum = [];
+    $totalSizeAvgSum = [];
+
     // should be 10
     echo "<p>";
     for ($executionNum=1; $executionNum <= 10 ; $executionNum++) {
@@ -83,40 +105,66 @@ for ($testcaseNo=1; $testcaseNo <= 18 ; $testcaseNo++) {
           array_push($responseSize,$row['responseContentSize']);
           array_push($totalSize,($row['requestContentSize']+$row['responseContentSize']));
         }
-        //echo $testCase, " :",$executionNum, " " , $API, " ", $dbName, " counts: " , count($responseTime), " - " , count($requestSize), " - " ,count($responseSize), " - " , count($totalSize);
-        //echo "<br>";
-
+        /*
+        echo $testCase, " :",$executionNum, " " , $API, " ", $dbName, " counts: " , count($responseTime), " - " , count($requestSize), " - " ,count($responseSize), " - " , count($totalSize);
+        echo "<br>";
+        */
 
         $timeOpen = Quartile($responseTime,0.25);
         $timeClose = Quartile($responseTime,0.75);
         $timeMin = min($responseTime);
         $timeMax = max($responseTime);
+        $timeAvg = Average($responseTime);
+
+        // Push values into sum array.
+        array_push($timeOpenSum,$timeOpen);
+        array_push($timeCloseSum,$timeClose);
+        array_push($timeAvgSum,$timeAvg);
+
 
         $requestSizeOpen = Quartile($requestSize,0.25);
         $requestSizeClose = Quartile($requestSize,0.75);
         $requestSizeMin = min($requestSize);
         $requestSizeMax = max($requestSize);
+        $requestSizeAvg = Average($requestSize);
+
+        // Push values into sum array.
+        array_push($requestSizeOpenSum,$requestSizeOpen);
+        array_push($requestSizeCloseSum,$requestSizeClose);
+        array_push($requestSizeAvgSum,$requestSizeAvg);
 
         $responseSizeOpen = Quartile($responseSize,0.25);
         $responseSizeClose = Quartile($responseSize,0.75);
         $responseSizeMin = min($responseSize);
         $responseSizeMax = max($responseSize);
+        $responseSizeAvg = Average($responseSize);
+
+        // Push values into sum array.
+        array_push($responseSizeOpenSum,$responseSizeOpen);
+        array_push($responseSizeCloseSum,$responseSizeClose);
+        array_push($responseSizeAvgSum,$responseSizeAvg);
 
         $totalSizeOpen = Quartile($totalSize,0.25);
         $totalSizeClose = Quartile($totalSize,0.75);
         $totalSizeMin = min($totalSize);
         $totalSizeMax = max($totalSize);
+        $totalSizeAvg = Average($totalSize);
+
+        // Push values into sum array.
+        array_push($totalSizeOpenSum,$totalSizeOpen);
+        array_push($totalSizeCloseSum,$totalSizeClose);
+        array_push($totalSizeAvgSum,$totalSizeAvg);
 
         $insert = $pdo->prepare("INSERT INTO resultstatistics
-          (executionNo, api, dbName, testCase, timeOpen, timeClose, timeMin, timeMax,
-          requestSizeOpen,  requestSizeClose ,  requestSizeMin ,  requestSizeMax ,
-          responseSizeOpen ,  responseSizeClose ,  responseSizeMin ,  responseSizeMax ,
-          totalSizeOpen ,  totalSizeClose ,  totalSizeMin ,  totalSizeMax )
+          (executionNo, api, dbName, testCase, timeOpen, timeClose, timeMin, timeMax, timeAvg,
+          requestSizeOpen,  requestSizeClose ,  requestSizeMin ,  requestSizeMax , requestSizeAvg,
+          responseSizeOpen ,  responseSizeClose ,  responseSizeMin ,  responseSizeMax , responseSizeAvg,
+          totalSizeOpen ,  totalSizeClose ,  totalSizeMin ,  totalSizeMax, totalSizeAvg )
           VALUES (:executionNo, :api ,  :dbName ,  :testCase ,
-              :timeOpen ,  :timeClose ,  :timeMin ,  :timeMax ,
-              :requestSizeOpen ,  :requestSizeClose ,  :requestSizeMin ,  :requestSizeMax ,
-              :responseSizeOpen ,  :responseSizeClose ,  :responseSizeMin ,  :responseSizeMax ,
-              :totalSizeOpen ,  :totalSizeClose ,  :totalSizeMin ,  :totalSizeMax )");
+              :timeOpen ,  :timeClose ,  :timeMin ,  :timeMax , :timeAvg,
+              :requestSizeOpen ,  :requestSizeClose ,  :requestSizeMin ,  :requestSizeMax , :requestSizeAvg,
+              :responseSizeOpen ,  :responseSizeClose ,  :responseSizeMin ,  :responseSizeMax , :responseSizeAvg,
+              :totalSizeOpen ,  :totalSizeClose ,  :totalSizeMin ,  :totalSizeMax, :totalSizeAvg )");
         $insert->bindParam(":executionNo",$executionNum);
         $insert->bindParam(":api",$API);
         $insert->bindParam(":dbName",$dbName);
@@ -125,20 +173,85 @@ for ($testcaseNo=1; $testcaseNo <= 18 ; $testcaseNo++) {
         $insert->bindParam(":timeClose",$timeClose);
         $insert->bindParam(":timeMin",$timeMin);
         $insert->bindParam(":timeMax",$timeMax);
+        $insert->bindParam(":timeAvg",$timeAvg);
         $insert->bindParam(":requestSizeOpen",$requestSizeOpen);
         $insert->bindParam(":requestSizeClose",$requestSizeClose);
         $insert->bindParam(":requestSizeMin",$requestSizeMin);
         $insert->bindParam(":requestSizeMax",$requestSizeMax);
+        $insert->bindParam(":requestSizeAvg",$requestSizeAvg);
         $insert->bindParam(":responseSizeOpen",$responseSizeOpen);
         $insert->bindParam(":responseSizeClose",$responseSizeClose);
         $insert->bindParam(":responseSizeMin",$responseSizeMin);
         $insert->bindParam(":responseSizeMax",$responseSizeMax);
+        $insert->bindParam(":responseSizeAvg",$responseSizeAvg);
         $insert->bindParam(":totalSizeOpen",$totalSizeOpen);
         $insert->bindParam(":totalSizeClose",$totalSizeClose);
         $insert->bindParam(":totalSizeMin",$totalSizeMin);
         $insert->bindParam(":totalSizeMax",$totalSizeMax);
+        $insert->bindParam(":totalSizeAvg",$totalSizeAvg);
         $insert->execute();
     }
+
+    /*
+    echo "<br> **** ";
+    echo $testCase, " :" , $API, " ", $dbName, " counts: " , count($timeAvgSum), " - " , count($timeOpenSum), " - " ,count($timeCloseSum);
+    echo "<br>";
+    */
+
+    $timeMinTot = min($timeAvgSum);
+    $timeOpenTot = Quartile($timeAvgSum,0.25);
+    $timeCloseTot = Quartile($timeAvgSum,0.75);
+    $timeMaxTot = max($timeAvgSum);
+
+    $requestSizeMinTot = min($requestSizeAvgSum);
+    $requestSizeOpenTot = Quartile($requestSizeAvgSum,0.25);
+    $requestSizeCloseTot = Quartile($requestSizeAvgSum,0.75);
+    $requestSizeMaxTot = max($requestSizeAvgSum);
+
+    $responseSizeMinTot = min($responseSizeAvgSum);
+    $responseSizeOpenTot = Quartile($responseSizeAvgSum,0.25);
+    $responseSizeCloseTot = Quartile($responseSizeAvgSum,0.75);
+    $responseSizeMaxTot = max($responseSizeAvgSum);
+
+    $totalSizeMinTot = min($totalSizeAvgSum);
+    $totalSizeOpenTot = Quartile($totalSizeAvgSum,0.25);
+    $totalSizeCloseTot = Quartile($totalSizeAvgSum,0.75);
+    $totalSizeMaxTot = max($totalSizeAvgSum);
+
+    $insertFinal = $pdo->prepare("INSERT INTO resultfinal
+      (api, dbName, testCase,
+          timeMin, timeOpen, timeClose,  timeMax,
+          requestSizeMin , requestSizeOpen,  requestSizeClose , requestSizeMax ,
+          responseSizeMin ,  responseSizeOpen ,  responseSizeClose ,  responseSizeMax ,
+          totalSizeOpen ,  totalSizeClose ,  totalSizeMin ,  totalSizeMax)
+      VALUES (:api ,  :dbName ,  :testCase ,
+          :timeMin , :timeOpen ,  :timeClose , :timeMax ,
+          :requestSizeMin , :requestSizeOpen ,  :requestSizeClose , :requestSizeMax ,
+          :responseSizeMin ,  :responseSizeOpen ,  :responseSizeClose ,  :responseSizeMax ,
+          :totalSizeMin ,  :totalSizeOpen ,  :totalSizeClose ,  :totalSizeMax )");
+      $insertFinal->bindParam(":api",$API);
+      $insertFinal->bindParam(":dbName",$dbName);
+      $insertFinal->bindParam(":testCase",$testCase);
+      $insertFinal->bindParam(":timeMin",$timeMinTot);
+      $insertFinal->bindParam(":timeOpen",$timeOpenTot);
+      $insertFinal->bindParam(":timeClose",$timeCloseTot);
+      $insertFinal->bindParam(":timeMax",$timeMaxTot);
+      $insertFinal->bindParam(":requestSizeMin",$requestSizeMinTot);
+      $insertFinal->bindParam(":requestSizeOpen",$requestSizeOpenTot);
+      $insertFinal->bindParam(":requestSizeClose",$requestSizeCloseTot);
+      $insertFinal->bindParam(":requestSizeMax",$requestSizeMaxTot);
+      $insertFinal->bindParam(":responseSizeMin",$responseSizeMinTot);
+      $insertFinal->bindParam(":responseSizeOpen",$responseSizeOpenTot);
+      $insertFinal->bindParam(":responseSizeClose",$responseSizeCloseTot);
+      $insertFinal->bindParam(":responseSizeMax",$responseSizeMaxTot);
+      $insertFinal->bindParam(":totalSizeMin",$totalSizeMinTot);
+      $insertFinal->bindParam(":totalSizeOpen",$totalSizeOpenTot);
+      $insertFinal->bindParam(":totalSizeClose",$totalSizeCloseTot);
+      $insertFinal->bindParam(":totalSizeMax",$totalSizeMaxTot);
+      $insertFinal->execute();
+      echo "<br>";
+      //$insertFinal->debugDumpParams();
+
     // after exect loop
     echo "</p>";
   }
