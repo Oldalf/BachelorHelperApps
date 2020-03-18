@@ -3,7 +3,7 @@
 error_reporting(1);
 
 function Quartile($Array, $Quartile) {
-  $array = sort($Array);
+  sort($Array);
   $pos = (count($Array) - 1) * $Quartile;
 
   $base = floor($pos);
@@ -118,54 +118,49 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
         $timeMin = min($responseTime);
         $timeMax = max($responseTime);
         $timeAvg = Average($responseTime);
-        $timeMedian = Quartile($responseTime,0.50);
 
         // Push values into sum array.
         array_push($timeOpenSum,$timeOpen);
         array_push($timeCloseSum,$timeClose);
         array_push($timeAvgSum,$timeAvg);
-        array_push($timeMedianSum,$timeMedian);
-
+        array_push($timeMedianSum,$timeAvg);
 
         $requestSizeOpen = Quartile($requestSize,0.25);
         $requestSizeClose = Quartile($requestSize,0.75);
         $requestSizeMin = min($requestSize);
         $requestSizeMax = max($requestSize);
         $requestSizeAvg = Average($requestSize);
-        $requestSizeMedian = Quartile($requestSize,0.50);
 
         // Push values into sum array.
         array_push($requestSizeOpenSum,$requestSizeOpen);
         array_push($requestSizeCloseSum,$requestSizeClose);
         array_push($requestSizeAvgSum,$requestSizeAvg);
-        array_push($requestSizeMedianSum,$requestSizeMedian);
+        array_push($requestSizeMedianSum,$requestSizeAvg);
 
         $responseSizeOpen = Quartile($responseSize,0.25);
         $responseSizeClose = Quartile($responseSize,0.75);
         $responseSizeMin = min($responseSize);
         $responseSizeMax = max($responseSize);
         $responseSizeAvg = Average($responseSize);
-        $responseSizeMedian = Quartile($responseSize,0.50);
 
         // Push values into sum array.
         array_push($responseSizeOpenSum,$responseSizeOpen);
         array_push($responseSizeCloseSum,$responseSizeClose);
         array_push($responseSizeAvgSum,$responseSizeAvg);
-        array_push($responseSizeMedianSum,$responseSizeMedian);
+        array_push($responseSizeMedianSum,$responseSizeAvg);
 
         $totalSizeOpen = Quartile($totalSize,0.25);
         $totalSizeClose = Quartile($totalSize,0.75);
         $totalSizeMin = min($totalSize);
         $totalSizeMax = max($totalSize);
         $totalSizeAvg = Average($totalSize);
-        $totalSizeMedian = Quartile($totalSize,0.50);
 
         // Push values into sum array.
         array_push($totalSizeOpenSum,$totalSizeOpen);
         array_push($totalSizeCloseSum,$totalSizeClose);
         array_push($totalSizeAvgSum,$totalSizeAvg);
-        array_push($totalSizeMedianSum,$totalSizeMedian);
-
+        array_push($totalSizeMedianSum,$totalSizeAvg);
+        /*
         $insert = $pdo->prepare("INSERT INTO resultstatistics
           (executionNo, api, dbName, testCase, timeOpen, timeClose, timeMin, timeMax, timeAvg,
           requestSizeOpen,  requestSizeClose ,  requestSizeMin ,  requestSizeMax , requestSizeAvg,
@@ -201,6 +196,7 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
         $insert->bindParam(":totalSizeMax",$totalSizeMax);
         $insert->bindParam(":totalSizeAvg",$totalSizeAvg);
         $insert->execute();
+        */
     }
 
     /*
@@ -229,6 +225,7 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
     $totalSizeCloseTot = Quartile($totalSizeAvgSum,0.75);
     $totalSizeMaxTot = max($totalSizeAvgSum);
 
+    /*
     $insertFinal = $pdo->prepare("INSERT INTO resultfinal
       (api, dbName, testCase,
           timeMin, timeOpen, timeClose,  timeMax,
@@ -260,6 +257,7 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
       $insertFinal->bindParam(":totalSizeClose",$totalSizeCloseTot);
       $insertFinal->bindParam(":totalSizeMax",$totalSizeMaxTot);
       $insertFinal->execute();
+      */
       //$insertFinal->debugDumpParams();
 
       //Some prints and stuff
