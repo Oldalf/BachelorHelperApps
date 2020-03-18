@@ -20,7 +20,7 @@ function Average($array){
   return (floor(array_sum($array)/count($array)*100))/100;
 }
 
-$pdo = new PDO('mysql:host=localhost;dbname=logdb', "root", "1234");
+$pdo = new PDO('mysql:host=localhost;dbname=logdb', "root", "");
 // should be 18
 for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
 
@@ -66,21 +66,24 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
     $timeOpenSum = [];
     $timeCloseSum = [];
     $timeAvgSum = [];
+    $timeMedianSum = [];
 
     $requestSizeOpenSum = [];
     $requestSizeCloseSum = [];
     $requestSizeAvgSum = [];
+    $requestSizeMedianSum = [];
 
     $responseSizeOpenSum = [];
     $responseSizeCloseSum = [];
     $responseSizeAvgSum = [];
+    $responseSizeMedianSum = [];
 
     $totalSizeOpenSum = [];
     $totalSizeCloseSum = [];
     $totalSizeAvgSum = [];
+    $totalSizeMedianSum = [];
 
     // should be 10
-    echo "<p>";
     for ($executionNum=1; $executionNum <= 10 ; $executionNum++) {
 
 
@@ -115,11 +118,13 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
         $timeMin = min($responseTime);
         $timeMax = max($responseTime);
         $timeAvg = Average($responseTime);
+        $timeMedian = Quartile($responseTime,0.50);
 
         // Push values into sum array.
         array_push($timeOpenSum,$timeOpen);
         array_push($timeCloseSum,$timeClose);
         array_push($timeAvgSum,$timeAvg);
+        array_push($timeMedianSum,$timeMedian);
 
 
         $requestSizeOpen = Quartile($requestSize,0.25);
@@ -127,33 +132,39 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
         $requestSizeMin = min($requestSize);
         $requestSizeMax = max($requestSize);
         $requestSizeAvg = Average($requestSize);
+        $requestSizeMedian = Quartile($requestSize,0.50);
 
         // Push values into sum array.
         array_push($requestSizeOpenSum,$requestSizeOpen);
         array_push($requestSizeCloseSum,$requestSizeClose);
         array_push($requestSizeAvgSum,$requestSizeAvg);
+        array_push($requestSizeMedianSum,$requestSizeMedian);
 
         $responseSizeOpen = Quartile($responseSize,0.25);
         $responseSizeClose = Quartile($responseSize,0.75);
         $responseSizeMin = min($responseSize);
         $responseSizeMax = max($responseSize);
         $responseSizeAvg = Average($responseSize);
+        $responseSizeMedian = Quartile($responseSize,0.50);
 
         // Push values into sum array.
         array_push($responseSizeOpenSum,$responseSizeOpen);
         array_push($responseSizeCloseSum,$responseSizeClose);
         array_push($responseSizeAvgSum,$responseSizeAvg);
+        array_push($responseSizeMedianSum,$responseSizeMedian);
 
         $totalSizeOpen = Quartile($totalSize,0.25);
         $totalSizeClose = Quartile($totalSize,0.75);
         $totalSizeMin = min($totalSize);
         $totalSizeMax = max($totalSize);
         $totalSizeAvg = Average($totalSize);
+        $totalSizeMedian = Quartile($totalSize,0.50);
 
         // Push values into sum array.
         array_push($totalSizeOpenSum,$totalSizeOpen);
         array_push($totalSizeCloseSum,$totalSizeClose);
         array_push($totalSizeAvgSum,$totalSizeAvg);
+        array_push($totalSizeMedianSum,$totalSizeMedian);
 
         $insert = $pdo->prepare("INSERT INTO resultstatistics
           (executionNo, api, dbName, testCase, timeOpen, timeClose, timeMin, timeMax, timeAvg,
@@ -249,11 +260,29 @@ for ($testcaseNo=1; $testcaseNo <= 18; $testcaseNo++) {
       $insertFinal->bindParam(":totalSizeClose",$totalSizeCloseTot);
       $insertFinal->bindParam(":totalSizeMax",$totalSizeMaxTot);
       $insertFinal->execute();
-      echo "<br>";
       //$insertFinal->debugDumpParams();
 
+      //Some prints and stuff
+      $timeAvgTotal = Average($timeAvgSum);
+      $timeMedianTotal = Quartile($timeMedianSum,0.5);
+
+      $requestSizeAvgTotal = Average($requestSizeAvgSum);
+      $requestSizeMedianTotal = Quartile($requestSizeMedianSum,0.5);
+
+      $responseSizeAvgTotal = Average($responseSizeAvgSum);
+      $responseSizeMedianTotal = Quartile($responseSizeMedianSum,0.5);
+
+      $totalSizeAvgTotal = Average($totalSizeAvgSum);
+      $totalSizeMedianTotal = Quartile($totalSizeMedianSum,0.5);
+
+      echo $API . ";" . $dbName . ";" . $testCase . ";" . $timeAvgTotal . ";" .
+            $timeMedianTotal . ";" . $requestSizeAvgTotal . ";" .
+            $requestSizeMedianTotal . ";" . $responseSizeAvgTotal . ";" .
+            $responseSizeMedianTotal . ";" . $totalSizeAvgTotal . ";" .
+            $totalSizeMedianTotal;
+      echo "<br>";
+
     // after exect loop
-    echo "</p>";
   }
   // after param loop
 }
